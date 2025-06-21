@@ -1,0 +1,27 @@
+#!/bin/bash
+
+output_file="pokemon_report.csv"
+data_dir="pokemon_data"
+
+# Ensure output file is fresh
+echo "Name,Height (m),Weight (kg)" > "$output_file"
+
+# Read and process each Pokémon JSON
+for file in "$data_dir"/*.json; do
+  name=$(jq -r '.name' "$file" | sed 's/.*/\u&/')
+  height=$(jq -r '.height' "$file" | awk '{printf "%.1f", $1 / 10}')
+  weight=$(jq -r '.weight' "$file" | awk '{printf "%.1f", $1 / 10}')
+  
+  echo "$name,$height,$weight" >> "$output_file"
+done
+
+echo -e "\nCSV Report generated at: $output_file"
+cat "$output_file"
+
+# Calculate Averages using awk (skip header)
+awk -F, 'NR>1 {sum_h+=$2; sum_w+=$3; count++} 
+  END {
+    if (count > 0) {
+      printf "\nAverage Height: %.2f m\nAverage Weight: %.2f kg\n", sum_h/count, sum_w/count
+    }
+  }' "$output_file"
